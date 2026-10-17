@@ -1,0 +1,31 @@
+# F1 boundary fixture. GATES THE REPORT: copylint refuses to print a verdict if any line here
+# scores wrong. Built 2026-09-14 when F1 was moved from a vocabulary list to the reviewer's four
+# structural archetypes () plus E, a posted schedule, which is ours.
+#
+# Column 1: MUST-FAIL means the text carries NO operational boundary and F1 must fire on it.
+#           MUST-PASS means it carries one and F1 must stay silent.
+# Column 2: the text.
+#
+# The first two MUST-PASS lines are FALSE POSITIVES THIS BUILD PRODUCED AND FIXED, pinned here
+# in the same turn as the fix per the standing rule in this stream.
+MUST-FAIL	Enjoy zero deposits, flexible hours, and unlimited payments!
+MUST-FAIL	Haircuts are $45. Beard trims are $25. We love what we do.
+MUST-FAIL	Our technicians are here for you. Book anytime. We make it easy.
+MUST-FAIL	We deliver premium service with flexible scheduling and transparent pricing.
+MUST-FAIL	Experience true comfort and lasting quality in every visit to our shop.
+MUST-PASS	Appointments require a 48-hour deposit of fifty dollars.
+MUST-PASS	A fifty dollar deposit is required to hold the slot.
+MUST-PASS	If you cancel less than 24 hours in advance, the fifty-dollar deposit is forfeited.
+MUST-PASS	We take only six custom cake orders per weekend.
+MUST-PASS	Strictly by appointment; no walk-ins on Saturdays.
+MUST-PASS	We do not work on European diesel engines.
+MUST-PASS	You must wash your hair the night before your color appointment.
+MUST-PASS	Open Tuesday through Saturday, 9am to 5pm.
+MUST-PASS	Cash, Zelle, or debit. We don't take Amex.
+# Added 2026-09-14 from moxies.com, a real professional chain page, read from his screenshots.
+# The offer line was the third F1 false positive of the day, same direction as the first two.
+MUST-PASS	Available September 8-November 15. Minimum spend and eligibility requirements apply.
+MUST-PASS	Minimum spend of $500 for groups of eight or more.
+MUST-PASS	Offer valid October 1 through December 24. Restrictions apply.
+MUST-FAIL	Meet Me at Moxies. Globally-inspired menus. Welcoming atmosphere. Award-winning hospitality.
+MUST-FAIL	Uniquely Moxies. Handcrafted Cocktails. Signature Desserts. Stay in the Know.

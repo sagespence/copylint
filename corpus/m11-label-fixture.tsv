@@ -1,0 +1,31 @@
+# M11 label fixture. GATES THE REPORT: copylint refuses a verdict if any line scores wrong.
+# Built 2026-10-16 after six PRD card titles passed M11 and a reviewer caught them by eye.
+# Column 1: MUST-FLAG = the label carries a claim (his rule 2026-09-07: a name is the bare noun).
+#           MUST-PASS = a bare noun label that must not trip.
+# Each case is wrapped as a markdown bold card title before it is tested.
+MUST-FLAG	Deadlines that don't slip
+MUST-FLAG	The key paperwork read for you
+MUST-FLAG	Problems flagged early
+MUST-FLAG	Know where any case stands in seconds
+MUST-FLAG	A clear next step in negotiations
+MUST-FLAG	The attorney stays in charge
+MUST-FLAG	Booking that runs itself
+MUST-FLAG	Your files in one place
+MUST-FLAG	Never miss a deadline
+MUST-PASS	Deadline tracking
+MUST-PASS	Morning brief
+MUST-PASS	A morning brief
+MUST-PASS	Case snapshot
+MUST-PASS	Red flags
+MUST-PASS	Document reading
+MUST-PASS	Negotiation guidance
+MUST-PASS	Online booking
+MUST-PASS	Missed deadlines
+MUST-PASS	Insurance coverage
+MUST-PASS	Prior injuries
+MUST-PASS	Attorney approval
+MUST-PASS	PI Case Quarterback
+MUST-PASS	Firm owners and managing partners
+MUST-PASS	What the product does
+MUST-PASS	Not in the first version
+MUST-PASS	No walk-ins

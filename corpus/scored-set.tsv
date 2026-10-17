@@ -1,0 +1,53 @@
+# Externally labelled scored set: 25 human, 25 machine, sentence level.
+# NOT A CONTROL. The checker was tuned against this set, so a score on it is IN SAMPLE and overfit.
+# Kept so a later change can be measured against the same ruler, never to claim coverage.
+HUMAN-01	human	Bring both keys when you drop off the truck because we have to reprogram the immobilizer module.
+HUMAN-02	human	Water heaters over ten years old usually rust from the bottom tank seams.
+HUMAN-03	human	We do scissor cuts on top and foil fades down to skin on the sides.
+HUMAN-04	human	Bread comes out of the deck oven at six in the morning and sells out by ten.
+HUMAN-05	human	If your compressor is humming but the outdoor fan is not spinning, shut the breaker off immediately.
+HUMAN-06	human	Suit alterations take seven business days during wedding season.
+HUMAN-07	human	We charge eighty dollars for the diagnostic scan, which gets credited toward your repair if you do the work here.
+HUMAN-08	human	Copper pipe costs more than PEX, but some city building codes still require it for main water lines.
+HUMAN-09	human	Cash or debit only at the counter because our card machine charges three percent on credit.
+HUMAN-10	human	You need new front brake pads when the wear indicators start squealing against the steel rotor.
+HUMAN-11	human	We do not trim wet beards because curly hair shrinks when it dries.
+HUMAN-12	human	The sourdough starter has to feed for eight hours before we mix the final levain.
+HUMAN-13	human	Oil changes include five quarts of synthetic 5W-30 and an OEM filter cartridge.
+HUMAN-14	human	Sewing a heavy brass zipper into a leather motorcycle jacket takes about an hour on the industrial machine.
+HUMAN-15	human	Check your crawl space for damp ground if the floorboards in the hallway feel spongy.
+HUMAN-16	human	We resurface brake drums on the lathe as long as they stay inside the stamped discard diameter.
+HUMAN-17	human	Appointments booked after five on Friday carry a twenty-dollar weekend emergency surcharge.
+HUMAN-18	human	Three coats of marine varnish are required if the bench sits on an uncovered porch.
+HUMAN-19	human	Do not pour bleach down the kitchen disposal because it corrodes the rubber splash guard.
+HUMAN-20	human	Fades take thirty minutes, hot lather head shaves take forty-five.
+HUMAN-21	human	If the AC refrigerant lines are frozen solid, turn the thermostat to off and leave the indoor blower running.
+HUMAN-22	human	The butcher block countertops need food-grade mineral oil once a month for the first year.
+HUMAN-23	human	We do not patch tire punctures that sit within one inch of the outer shoulder.
+HUMAN-24	human	Hemming trousers without a cuff is fifteen dollars; adding a blind-stitched cuff is twenty-two.
+HUMAN-25	human	Croissants need three turns over twenty-four hours to develop distinct butter layers.
+MACHINE-01	machine	Our certified master technicians leverage advanced diagnostic scanners, ensuring seamless reliability for your daily family commute.
+MACHINE-02	machine	Combining classic culinary passion with artisanal precision, our bakery creates unforgettable morning memories for every neighborhood guest.
+MACHINE-03	machine	Our personalized styling consultation is designed to unlock your authentic aesthetic potential.
+MACHINE-04	machine	We offer more than just basic pipe repair; we provide comprehensive home water security.
+MACHINE-05	machine	Elevate your grooming ritual: our modern shop delivers unmatched barbering artistry.
+MACHINE-06	machine	Refine your wardrobe, express your individuality, and command respect wherever you go.
+MACHINE-07	machine	Restore your comfort and reclaim your peace.
+MACHINE-08	machine	Looking for reliable automotive solutions? We treat every vehicle like our personal pride and joy.
+MACHINE-09	machine	Our passionate craftsmen perform meticulous brake system flushes with unwavering integrity.
+MACHINE-10	machine	Bespoke HVAC Climate Transformations for Discerning Homeowners.
+MACHINE-11	machine	Premium Emergency Drain Clearing Tailored for Modern Kitchens.
+MACHINE-12	machine	Our dedicated team provides professional residential plumbing installations across the entire metro area, delivering unparalleled craftsmanship on every single service call.
+MACHINE-13	machine	Delivering uncompromising quality to our valued clients, our shop provides premier exterior detailing services.
+MACHINE-14	machine	Experience the timeless beauty of freshly baked European sourdough, handcrafted daily to enrich your breakfast table.
+MACHINE-15	machine	Our preventative heating inspection is here to protect your family from harsh seasonal elements.
+MACHINE-16	machine	We craft thoughtful, artisanal pastry selections, allowing you to savor life's sweetest moments.
+MACHINE-17	machine	Why choose our salon? We curate bespoke hair coloring palettes that harmonize with your skin tone.
+MACHINE-18	machine	Transform your living space with custom wood furnishings, creating an enduring legacy for generations.
+MACHINE-19	machine	Our tailored maintenance packages are all about maximizing your vehicle's peak road performance.
+MACHINE-20	machine	Nurturing your personal style through precision scissor work, we redefine modern urban masculinity.
+MACHINE-21	machine	Discover the difference that authentic dedication makes in every slice of our artisan sourdough.
+MACHINE-22	machine	We go beyond ordinary automotive maintenance by engineering complete driving confidence.
+MACHINE-23	machine	Your home deserves exceptional climate care: our technicians deliver dependable heating comfort.
+MACHINE-24	machine	Enhance your natural silhouette with bespoke garment adjustments, providing an effortless fit for every special occasion.
+MACHINE-25	machine	Dedicated to culinary excellence, our morning crew bakes vibrant pastries that brighten your neighborhood routine.
