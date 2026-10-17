@@ -14,18 +14,20 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import copylint
 
 def score(tsv):
+    """Score the labelled TSV. Input: path to id<TAB>label<TAB>sentence rows. Output: a dict
+    with n, tp, fp, tn, fn, precision, recall, accuracy, misses and falsepos. Each sentence
+    is linted in memory in message mode, so no temporary file is written."""
     rows = []
-    for line in open(tsv, errors="replace"):
-        if line.startswith("#") or not line.strip(): continue
-        parts = line.rstrip("\n").split("\t")
-        if len(parts) != 3: continue
-        rows.append(parts)
-    tmp = "/tmp/_copylint_score_unit.txt"
+    with open(tsv, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            if line.startswith("#") or not line.strip(): continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) != 3: continue
+            rows.append(parts)
     tp = fp = tn = fn = 0
     misses, falsepos = [], []
     for rid, label, sent in rows:
-        with open(tmp, "w") as f: f.write(sent + "\n")
-        fs = [x for x in copylint.lint(tmp, "message") if x[1] not in copylint.ADVISORY]
+        fs = [x for x in copylint.lint_text(sent + "\n", "", "message") if x[1] not in copylint.ADVISORY]
         flagged = bool(fs)
         if label == "machine":
             if flagged: tp += 1
@@ -33,7 +35,6 @@ def score(tsv):
         else:
             if flagged: fp += 1; falsepos.append((rid, sent, [x[1] for x in fs]))
             else: tn += 1
-    os.path.exists(tmp) and os.remove(tmp)
     prec = tp / (tp + fp) if (tp + fp) else float("nan")
     rec  = tp / (tp + fn) if (tp + fn) else float("nan")
     acc  = (tp + tn) / len(rows) if rows else float("nan")
@@ -44,7 +45,10 @@ def score(tsv):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("usage: score.py <labelled.tsv>", file=sys.stderr); sys.exit(2)
-    r = score(sys.argv[1])
+    try:
+        r = score(sys.argv[1])
+    except OSError as e:
+        print(f"ERROR: cannot read {sys.argv[1]}: {e.strerror or e}", file=sys.stderr); sys.exit(2)
     print(f"n={r['n']}  TP={r['tp']} FP={r['fp']} TN={r['tn']} FN={r['fn']}")
     print(f"PRECISION {r['precision']:.2f}  RECALL {r['recall']:.2f}  ACCURACY {r['accuracy']:.2f}")
     if r["falsepos"]:

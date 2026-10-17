@@ -1,6 +1,5 @@
 # M11 label fixture. GATES THE REPORT: copylint refuses a verdict if any line scores wrong.
-# Built 2026-10-16 after six PRD card titles passed M11 and a reviewer caught them by eye.
-# Column 1: MUST-FLAG = the label carries a claim (his rule 2026-09-07: a name is the bare noun).
+# Column 1: MUST-FLAG = the label carries a claim (rule: a name is the bare noun).
 #           MUST-PASS = a bare noun label that must not trip.
 # Each case is wrapped as a markdown bold card title before it is tested.
 MUST-FLAG	Deadlines that don't slip

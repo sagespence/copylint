@@ -3,25 +3,32 @@
 
 Input : one or more .html/.md/.txt paths, or - for stdin.
 Output: one finding per line as path:line: [ID] name | sentence, plus file-level checks.
-        Exit 0 clean, 1 findings, 2 control failure (report is vacuous and is withheld).
+        Exit 0 clean, 1 findings, 2 refused or error (a control failed, an input could
+        not be read, or an input held no prose to judge; no verdict is given).
 
-It FLAGS. It never rewrites: the wording call is the human's (the house copy standard).
+It FLAGS. It never rewrites: the wording call belongs to a human.
 
-Rules are read from rules.json beside this file so the prose standard and the code cannot
-drift apart silently. Two negative controls gate every run, by design: a machine corpus that
-must trip named markers and a human corpus that must trip none. A run whose controls do
-not both pass reports itself vacuous and prints no verdict.
+Rules are read from rules.json beside this file and documented in the README, so the prose
+standard and the code cannot drift apart silently. Two negative controls gate every run, by
+design: a machine corpus that must trip named markers and a human corpus that must trip
+none. A run whose controls do not both pass reports itself vacuous and prints no verdict.
+An input that yields no prose at all is refused the same way, never reported clean.
 """
-import html, json, os, re, sys, statistics
+import argparse, html, json, os, re, sys, statistics
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-RULES = json.load(open(os.path.join(HERE, "rules.json")))
+with open(os.path.join(HERE, "rules.json"), encoding="utf-8") as _fh:
+    RULES = json.load(_fh)
+
+
+class NoProse(Exception):
+    """Raised when an input yields no prose units, so any verdict on it would be vacuous."""
 
 ABSTRACT = {"experience","excellence","journey","promise","story","passion","craft","soul",
     "spirit","signature","essence","vision","legacy","confidence","transformation","beauty",
     "artistry","mastery","tradition","atmosphere","difference","standard","possibility","moment",
     "style","look","presence","comfort","peace","individuality","respect","potential","clarity",
-    "security","integrity","quality","care","excellence","dedication","confidence","harmony",
+    "security","integrity","quality","care","dedication","harmony",
     "wellbeing","reliability","elegance","sophistication","luxury","ritual","lifestyle"}
 CTA = {"book","call","get","find","shop","schedule","order","visit","see","browse","view","start","join","text"}
 TAGWORDS = ["on autopilot","in your words","in one place","made easy","done right","that runs itself",
@@ -64,6 +71,7 @@ def strip_html(raw):
     return out
 
 def strip_md(raw):
+    """Yield (line_no, kind, text) for markdown or plain text. kind is heading, label or prose."""
     out = []
     fence = False
     for i, ln in enumerate(raw.splitlines(), 1):
@@ -84,9 +92,8 @@ def bold_lead(i, s, out):
     """A paragraph or list item that opens with a **bold lead** carries a label, then prose.
 
     Input: line number, the stripped line, the output list. Output: True when it split the line.
-    Why: before 2026-10-16 the whole line went out as prose, so a bold card title such as
-    "Deadlines that don't slip" was never tested as a label and M11 could not see it. Found
-    when a reviewer caught six such titles in a client PRD that copylint had reported on.
+    Why: if the whole line went out as prose, a bold card title such as "Deadlines that
+    don't slip" would never be tested as a label and M11 could not see it.
     """
     m = re.match(r"^\*\*(.+?)\*\*\s*(.*)$", s)
     if not m: return False
@@ -96,18 +103,47 @@ def bold_lead(i, s, out):
     if m.group(2).strip(): out.append((i, "prose", m.group(2).strip()))
     return True
 
-def extract(path):
-    raw = sys.stdin.read() if path == "-" else open(path, errors="replace").read()
-    ext = "" if path == "-" else os.path.splitext(path)[1].lower()
+def read_text(path):
+    """Read a path (or stdin for "-") as UTF-8 text.
+
+    Input: a file path or "-". Output: the decoded text. Raises OSError when the path cannot
+    be read and NoProse when the bytes are binary or not valid UTF-8, since text that cannot
+    be decoded cannot be judged and must not be reported clean.
+    """
+    if path == "-":
+        data = sys.stdin.buffer.read()
+    else:
+        with open(path, "rb") as fh:
+            data = fh.read()
+    if b"\x00" in data:
+        raise NoProse("binary input")
+    try:
+        return data.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        raise NoProse("input is not valid UTF-8") from None
+
+def extract_text(raw, ext):
+    """Split raw text into (line_no, kind, text) units. Input: text and a lowercase extension.
+
+    .html and .htm go through the HTML extractor; everything else, stdin included, is read
+    as markdown or plain text.
+    """
     if ext in (".html", ".htm"): return strip_html(raw)
-    if ext in (".md", ".markdown"): return strip_md(raw)
     return strip_md(raw)
+
+def extract(path):
+    """Read a path (or "-") and return its (line_no, kind, text) units."""
+    raw = read_text(path)
+    ext = "" if path == "-" else os.path.splitext(path)[1].lower()
+    return extract_text(raw, ext)
 
 SENT = re.compile(r"[^.!?]*[.!?]|[^.!?]+$")
 def sentences(text):
+    """Split text into stripped, non-empty sentences on . ! and ?."""
     return [s.strip() for s in SENT.findall(text) if s.strip()]
 
 def syllables(w):
+    """Rough syllable count for one word (vowel groups, minus a silent final e). Minimum 1."""
     w = w.lower().strip("'\".,;:!?()")
     if not w: return 0
     g = re.findall(r"[aeiouy]+", w)
@@ -115,12 +151,18 @@ def syllables(w):
     if w.endswith("e") and n > 1 and not w.endswith(("le","ee","ye")): n -= 1
     return max(1, n)
 
-def sylls(s): return sum(syllables(w) for w in s.split())
-def words(s): return [w for w in re.findall(r"[A-Za-z0-9'$/-]+", s)]
+def sylls(s):
+    """Total syllables in a string."""
+    return sum(syllables(w) for w in s.split())
+
+def words(s):
+    """Word tokens in a string: letters, digits, apostrophes, $, / and hyphens."""
+    return re.findall(r"[A-Za-z0-9'$/-]+", s)
 
 # ---------- marker tests ----------
 QUOTED = re.compile(r'"[^"]*"|\u201c[^\u201d]*\u201d|`[^`]*`|\u2018[^\u2019]*\u2019')
 def quoted_spans(sent):
+    """Return (start, end) offsets of every quoted span in a sentence."""
     return [(m.start(), m.end()) for m in QUOTED.finditer(sent)]
 
 def in_quote(sent, m):
@@ -132,6 +174,11 @@ NUMERIC = re.compile(r"\d|\b(one|two|three|four|five|six|seven|eight|nine|ten|tw
     r"degree|percent|dollar|quart|coat|turn|gram|psi|volt)", re.I)
 
 def t_regex(rule, sent, kind):
+    """Plain pattern marker. True when rule["pattern"] matches outside a quotation.
+
+    M13 (dashes) is case-sensitive and ignores quotes. M1 is waived when the tail carries a
+    measurement, because that is a spec and not a benefit tag.
+    """
     flags = 0 if rule["id"] == "M13" else re.I
     m = re.search(rule["pattern"], sent, flags)
     if not m: return False
@@ -141,6 +188,11 @@ def t_regex(rule, sent, kind):
     return True
 
 def t_colon_claim(rule, sent, kind):
+    """M5: a claim pre-announced with a colon and unpacked after it.
+
+    True for a long lead-in followed by a colon and an abstract explanation. Label:value
+    pairs, citations, instructions, quotations and concrete specifics are excluded.
+    """
     if ":" not in sent: return False
     before, after = sent.split(":", 1)
     bw, aw = words(before), words(after)
@@ -158,14 +210,8 @@ def t_colon_claim(rule, sent, kind):
     if aw and aw[0].lower().strip(",.") in IMPER: return False    # an instruction, not an assertion
     return True
 
-# A filter, not a population.  Expanding it raises recall and never precision;
-# an expansion is asked of an external reviewer in .
-VERBHEADS = {"get","keep","make","take","give","cut","book","stay","run","build","refine",
-    "elevate","walk","show","tell","bring","find","save","grow","boost","win","serve","meet",
-    "deliver","create","provide","protect","restore","unlock","discover","experience","enjoy",
-    "we","you","our","it","they","he","she","i"}
-
 def _clauses(sent, n):
+    """Split a sentence into exactly n coordinate clauses, or return None."""
     body = re.sub(r"[.!?]+$", "", sent)
     if n == 3:
         parts = re.split(r",\s*(?:and\s+)?|\s+and\s+", body)
@@ -175,6 +221,12 @@ def _clauses(sent, n):
     return parts if len(parts) == n else None
 
 def t_isocolon(rule, sent, kind):
+    """M6 and M7: n parallel clauses of near-equal length that praise an abstraction.
+
+    True when rule["n"] clauses have near-equal word and syllable counts, do not all open
+    with the same word (that is anaphora, a human figure), are real clauses of three or more
+    words, and name an abstract virtue.
+    """
     n = rule["n"]
     parts = _clauses(sent, n)
     if not parts: return False
@@ -194,6 +246,7 @@ def t_isocolon(rule, sent, kind):
     return True
 
 def t_tagline(rule, sent, kind):
+    """M10: a short abstract heading that works as free-standing ad copy."""
     if kind != "heading": return False
     w = words(sent)
     if not (3 <= len(w) <= 9): return False
@@ -204,12 +257,13 @@ def t_tagline(rule, sent, kind):
     return any(x.lower().strip(".,") in ABSTRACT for x in w)
 
 def t_label_rule(rule, sent, kind):
+    """M11: a label or heading that carries a claim instead of being a bare noun."""
     if kind not in ("label", "heading"): return False
-    # A bold card title is a label by position, so it is tested up to nine words (2026-10-16).
+    # A bold card title is a label by position, so it is tested up to nine words.
     if not is_labelish(sent) and not (kind == "label" and len(words(sent)) <= 9
                                       and not re.search(r"[.!?]\s*$", sent)): return False
     low = sent.lower().rstrip(".")
-    # A label that opens "Not ..." or "No ..." states an exclusion, a boundary, not a claim (2026-10-16).
+    # A label that opens "Not ..." or "No ..." states an exclusion, a boundary, not a claim.
     if re.match(r"^(not|no)\s", low): return False
     if any(low.endswith(t) or (" " + t) in low for t in TAGWORDS): return True
     w = words(sent)
@@ -221,13 +275,13 @@ def t_label_rule(rule, sent, kind):
         return True
     return label_claim_extra(low, w)
 
-# Added 2026-10-16 after six PRD card titles passed M11 ("Deadlines that don't slip", "The key
-# paperwork read for you", "Problems flagged early", "Know where any case stands in seconds",
-# "A clear next step in negotiations", "The attorney stays in charge"). Each carries a claim
-# the old tests could not see: the reader addressed, a negation, a speed or timing promise,
-# a finite verb, an imperative, a past participle used as a predicate, or a selling adjective.
+# Extra M11 tests for card titles such as "Deadlines that don't slip", "The key paperwork read
+# for you", "Problems flagged early", "Know where any case stands in seconds", "A clear next
+# step in negotiations" and "The attorney stays in charge". Each carries a claim that a bare
+# noun label would not: the reader addressed, a negation, a speed or timing promise, a finite
+# verb, an imperative, a past participle used as a predicate, or a selling adjective.
 # Gated by corpus/m11-label-fixture.tsv so none of these can quietly stop firing.
-# Nouns that end in -ing and are not verbs; "A morning brief" tripped the -ing test (2026-10-16).
+# Nouns that end in -ing and are not verbs; "A morning brief" would otherwise trip the -ing test.
 NOUN_ING = {"morning", "evening", "building", "booking", "pricing", "training", "setting", "meeting",
             "wedding", "ceiling", "clothing", "parking", "housing", "landing", "listing", "filing",
             "billing", "onboarding", "warning", "opening", "reading", "tracking", "ring", "spring",
@@ -256,9 +310,6 @@ def label_claim_extra(low, w):
             return True
     return False
 
-BASEVERBS = {"thank","welcome","enjoy","discover","experience","choose","meet","join","book",
-    "call","bring","get","let","take","make","see","try","come","ask","tell","show","keep","give"}
-
 FINITE = re.compile(r"\b(is|are|was|were|be|been|does|do|did|has|have|had|can|could|will|"
     r"would|should|must|may|might|gives|creates|makes|takes|sounds|means|costs|runs|needs|"
     r"keeps|works|comes|goes|gets|sends|stores|charges|holds|shows|tells|brings|builds|"
@@ -268,6 +319,11 @@ TEMPORAL = re.compile(r"^(Starting|Beginning|Effective|Ending|Closing|Opening)\s
     r"[A-Z][a-z]+\s+\d|\d)", re.I)
 
 def t_fronted(rule, sent, kind):
+    """M2: a sentence that opens with a verb-ing phrase before the actor.
+
+    Schedule notices ("Starting tomorrow, ...") and phrases whose head already holds a
+    finite verb are excluded, and a main clause must follow the comma.
+    """
     m = re.search(rule["pattern"], sent, re.I)
     if not m: return False
     if TEMPORAL.match(sent): return False   # "Starting tomorrow," is a schedule notice, not an inversion
@@ -283,6 +339,7 @@ DET_TRI = re.compile(
     r"\b(your|our|their|the|every|each|no)\s+[\w'-]+\s*,\s+\1\s+[\w'-]+\s*,?\s+(?:and\s+)?\1\s+[\w'-]+",
     re.I)
 def t_det_tricolon(rule, sent, kind):
+    """M15: three noun phrases sharing one determiner ("your time, your trust, and your style")."""
     m = DET_TRI.search(sent)
     return bool(m) and not in_quote(sent, m)
 
@@ -290,6 +347,7 @@ IMP_SERIES = re.compile(
     r"\b[a-z]+\s+(your|our)\s+[\w'-]+\s*,\s+[a-z]+\s+(?:\1\s+)?[\w'-]+\s*,?\s+(?:and\s+)?[a-z]+\s+",
     re.I)
 def t_imp_series(rule, sent, kind):
+    """M16: a repeated imperative-plus-possessive frame ("Refine your X, express your Y, and ...")."""
     m = IMP_SERIES.search(sent)
     if not m or in_quote(sent, m): return False
     return len(re.findall(r"\b(your|our)\b", sent, re.I)) >= 2
@@ -304,7 +362,7 @@ def t_entropy(units):
     scales with sentence length: 3.0 words of spread on 12-word sentences is a 25% variation
     and on 24-word sentences only 12.5%, so one raw floor means two different things. Window
     is 4 rather than 3 because three plain declarative human sentences reach a low stdev by
-    coincidence (13, 14, 13 gives 0.58). Both changes: reviewer 2026-09-14.
+    coincidence (13, 14, 13 gives 0.58).
     """
     rule = next(r for r in RULES["markers"] if r["test"] == "entropy")
     win = rule["window"]
@@ -336,9 +394,8 @@ def t_np_tricolon(units):
     STRUCTURAL, NOT A WORD LIST. M6 sees clause tricolons and M15 sees a shared determiner
     ("your time, your trust, and your style"); neither can see three bare adjective-plus-noun
     fragments punctuated as separate sentences, which is the commonest form of the machine
-    strapline. Measured 2026-09-14 on a real professional restaurant page: "Globally-inspired
-    menus. Welcoming atmosphere. Award-winning hospitality." tripped nothing at all and is the
-    most synthetic line on that page.
+    strapline. A restaurant-page line such as "Globally-inspired menus. Welcoming atmosphere.
+    Award-winning hospitality." trips nothing else in this tool.
 
     At least two of the three must carry an adjective, which is what keeps a genuine fragment
     menu out: "Haircuts. Beard trims. Hot towel shaves." carries none and does not flag.
@@ -365,14 +422,14 @@ BOUNDARY_RX = None
 def boundary_archetypes(text):
     """Return the names of the boundary archetypes present in text.
 
-    A GENUINE OPERATIONAL BOUNDARY IS A STRUCTURE, NOT A WORD. The four archetypes are the
-    reviewer's (): a bilateral condition penalty, a hard capacity ceiling, an
-    explicit scope exclusion, a prerequisite gate. E, a concretely posted schedule, is ours
-    and is added because a real page that says "Tuesday to Saturday, 9 to 5" has stated a
-    real limit and would otherwise fail on a rule written against machine copy.
+    A GENUINE OPERATIONAL BOUNDARY IS A STRUCTURE, NOT A WORD. Four archetypes: a bilateral
+    condition penalty (A), a hard capacity ceiling (B), an explicit scope exclusion (C) and a
+    prerequisite gate (D). A fifth, a concretely posted schedule (E), is added because a real
+    page that says "Tuesday to Saturday, 9 to 5" has stated a real limit and would otherwise
+    fail on a rule written against machine copy.
 
-    The old test was a vocabulary list and passed on any mention of a deposit, an hour or a
-    price, which is exactly how the reviewer's bypass cleared it.
+    A vocabulary list would pass on any mention of a deposit, an hour or a price, which is
+    exactly how a bypass such as "Enjoy zero deposits, flexible hours" would clear it.
     """
     global BOUNDARY_RX
     if BOUNDARY_RX is None:
@@ -381,45 +438,73 @@ def boundary_archetypes(text):
     return [k for k, rx in BOUNDARY_RX if rx.search(text)]
 
 # ---------- driver ----------
-PAGE_ONLY = {"F1", "M12"}
+# Markers that need a whole page (a window of consecutive sentences) and are skipped in
+# message mode. Derived from rules.json so the count printed for a run cannot drift from
+# what lint() actually evaluates.
+PAGE_ONLY = {r["id"] for r in RULES["markers"] if r["test"] == "entropy"}
 
-def lint(path, kind_mode="page"):
-    units_raw = extract(path)
+
+class RulesError(Exception):
+    """Raised when rules.json cannot be applied, so no verdict can be given."""
+
+
+def evaluated_marker_ids(kind_mode):
+    """IDs of the markers lint evaluates in a mode: all of them on a page, all but the
+    page-only ones in message mode. Input: "page" or "message". Output: list of ids."""
+    return [r["id"] for r in RULES["markers"]
+            if kind_mode == "page" or r["id"] not in PAGE_ONLY]
+
+
+def lint_text(raw, ext="", kind_mode="page"):
+    """Lint already-read text.
+
+    Input: the text, its lowercase extension (".html" selects the HTML extractor, anything
+    else is read as markdown or plain text) and the mode, "page" or "message".
+    Output: sorted findings as (line, id, name, sentence). Raises NoProse when the text
+    holds no sentences, because an empty reading is blindness and not a clean result, and
+    RulesError when rules.json names a test that does not exist.
+    """
     units = []
-    for line, kind, text in units_raw:
+    for line, kind, text in extract_text(raw, ext):
         for s in sentences(text):
             units.append((line, kind, s))
+    if not units:
+        raise NoProse()
+    active = set(evaluated_marker_ids(kind_mode))
     findings = []
     for line, kind, sent in units:
         for rule in RULES["markers"]:
+            if rule["id"] not in active: continue
             if rule["test"] in ("entropy", "np_tricolon"): continue  # windowed, run below
             fn = TESTS.get(rule["test"])
             if fn is None:
-                raise SystemExit(f"VACUOUS: rules.json names unknown test {rule['test']!r} "
-                                 f"for {rule['id']}. No verdict is reported.")
-            try: hit = fn(rule, sent, kind)
-            except Exception: hit = False
-            if hit: findings.append((line, rule["id"], rule["name"], sent))
-    if kind_mode == "page":
+                raise RulesError(f"rules.json names unknown test {rule['test']!r} "
+                                 f"for {rule['id']}")
+            if fn(rule, sent, kind): findings.append((line, rule["id"], rule["name"], sent))
+    if "M12" in active:
         for line, blob in t_entropy(units):
             findings.append((line, "M12", "flat sentence-length entropy", blob))
     for line, blob in t_np_tricolon(units):
         findings.append((line, "M17", "noun-phrase tricolon", blob))
-    # file-level
-    alltext = " ".join(s for _, _, s in units)
     if kind_mode == "page":
-        findings += page_structure(path, alltext)
-    for fc in RULES["file_checks"]:
-        if kind_mode != "page": continue
-        if fc.get("test") == "page_structure": continue
-        if fc["id"] == "F1":
-            if not boundary_archetypes(alltext):
-                findings.append((0, "F1", fc["name"],
-                                 "no operational boundary anywhere on this page: no condition with a "
-                                 "consequence, no capacity ceiling, no stated exclusion, no prerequisite, "
-                                 "no posted schedule. Naming a price is not a boundary."))
+        alltext = " ".join(s for _, _, s in units)
+        findings += page_structure(raw, ext, alltext)
+        if not boundary_archetypes(alltext):
+            fc = next(f for f in RULES["file_checks"] if f["id"] == "F1")
+            findings.append((0, "F1", fc["name"],
+                             "no operational boundary anywhere on this page: no condition with a "
+                             "consequence, no capacity ceiling, no stated exclusion, no prerequisite, "
+                             "no posted schedule. Naming a price is not a boundary."))
     findings.sort(key=lambda f: (f[0], f[1]))
     return findings
+
+
+def lint(path, kind_mode="page"):
+    """Lint a file path, or "-" for stdin. Output as lint_text. Raises OSError when the path
+    cannot be read and NoProse when it is binary or holds no prose."""
+    raw = read_text(path)
+    ext = "" if path == "-" else os.path.splitext(path)[1].lower()
+    return lint_text(raw, ext, kind_mode)
 
 ADVISORY = {r["id"] for r in RULES["markers"] if r.get("rank") == 7}
 
@@ -431,21 +516,20 @@ RESIDUE = re.compile(
     r"|\bthe (events|details|specifics) behind them\b"        # copy naming what it will hold
     r"|\b(copy|text|words) (for|from) (her|his|their|the) [a-z]+ page\b", re.I)
 
-def page_structure(path, alltext):
-    """Page-level AI-site tells. Measured 2026-09-14 on the reviewer's a sample site site review.
-    These are STRUCTURE, not sentence register, which is a different layer and is why the
-    sentence markers all passed a page he called underwhelming."""
+def page_structure(raw, ext, alltext):
+    """Page-level AI-site tells: F2 draft residue, F3 reused assets, F4 monotonous grids.
+
+    These are STRUCTURE, not sentence register, which is a different layer: a page can pass
+    every sentence marker and still read as generated. Input: the raw text, its extension
+    and the extracted prose. F2 runs on any input; F3 and F4 read markup and run on HTML only.
+    Output: list of findings.
+    """
     out = []
-    try:
-        raw = open(path, errors="replace").read()
-    except Exception:
-        return out
-    if not path.lower().endswith((".html", ".htm")):
-        m = RESIDUE.search(alltext)
+    m = RESIDUE.search(alltext)
+    if ext not in (".html", ".htm"):
         if m: out.append((0, "F2", "draft residue in copy", alltext[max(0,m.start()-60):m.start()+80]))
         return out
 
-    m = RESIDUE.search(alltext)
     if m:
         out.append((0, "F2", "draft residue in copy",
                     "builder scaffolding survived into visible text: " + alltext[max(0,m.start()-50):m.start()+90]))
@@ -468,51 +552,69 @@ def page_structure(path, alltext):
                     "50/50 flip down the whole page is the commonest generated-site cadence"))
     return out
 
-def f1_fixture():
+def f1_fixture(path=None):
     """F1's structural archetypes are gated on a fixture that must score perfectly.
 
-    A vocabulary list could be eyeballed. Four regex archetypes cannot, and the two false
-    positives this check produced on the day it was written were both found by running it
-    over real boundary sentences rather than by reading it. Returns [] when correct.
+    A vocabulary list could be eyeballed. Five regex archetypes cannot, and false positives
+    are found by running them over real boundary sentences rather than by reading them.
+    Input: optional fixture path (default corpus/f1-boundary-fixture.tsv). Output: list of
+    problems, [] when correct. A fixture with no cases is itself a problem.
     """
-    path = os.path.join(HERE, "corpus", "f1-boundary-fixture.tsv")
-    bad = []
-    for line in open(path, errors="replace"):
-        if line.startswith("#") or not line.strip(): continue
-        parts = line.rstrip("\n").split("\t")
-        if len(parts) != 2: continue
-        want, text = parts
-        got = boundary_archetypes(text)
-        if want == "MUST-FAIL" and got:
-            bad.append(f"MUST-FAIL line matched {','.join(got)}: {text[:70]!r}")
-        if want == "MUST-PASS" and not got:
-            bad.append(f"MUST-PASS line matched no archetype: {text[:70]!r}")
-    if not bad and not any(True for _ in open(path, errors="replace") if _.startswith("MUST-")):
+    path = path or os.path.join(HERE, "corpus", "f1-boundary-fixture.tsv")
+    bad, n = [], 0
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            if line.startswith("#") or not line.strip(): continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) != 2: continue
+            want, text = parts; n += 1
+            got = boundary_archetypes(text)
+            if want == "MUST-FAIL" and got:
+                bad.append(f"MUST-FAIL line matched {','.join(got)}: {text[:70]!r}")
+            if want == "MUST-PASS" and not got:
+                bad.append(f"MUST-PASS line matched no archetype: {text[:70]!r}")
+    if n == 0:
         bad.append("VACUOUS: the F1 fixture holds no cases")
     return bad
 
-def m11_fixture():
-    """the M11 label test is gated on a fixture that must score perfectly. Returns [] when correct.
+def m11_fixture(path=None):
+    """The M11 label test is gated on a fixture that must score perfectly.
 
     Each case is run through strip_md as a bold card title, so the fixture fails if either the
-    bold-lead extraction or the label test stops working. Added 2026-10-16.
+    bold-lead extraction or the label test stops working. Input: optional fixture path
+    (default corpus/m11-label-fixture.tsv). Output: list of problems, [] when correct.
     """
-    path = os.path.join(HERE, "corpus", "m11-label-fixture.tsv")
+    path = path or os.path.join(HERE, "corpus", "m11-label-fixture.tsv")
     bad, n = [], 0
-    for line in open(path, errors="replace"):
-        if line.startswith("#") or not line.strip(): continue
-        parts = line.rstrip("\n").split("\t")
-        if len(parts) != 2: continue
-        want, text = parts; n += 1
-        units = strip_md("**%s.** Body sentence follows here." % text)
-        got = any(k == "label" and t_label_rule(None, t, k) for _, k, t in units)
-        if want == "MUST-FLAG" and not got: bad.append(f"MUST-FLAG label not flagged: {text!r}")
-        if want == "MUST-PASS" and got: bad.append(f"MUST-PASS label flagged: {text!r}")
+    with open(path, encoding="utf-8", errors="replace") as fh:
+        for line in fh:
+            if line.startswith("#") or not line.strip(): continue
+            parts = line.rstrip("\n").split("\t")
+            if len(parts) != 2: continue
+            want, text = parts; n += 1
+            units = strip_md("**%s.** Body sentence follows here." % text)
+            got = any(k == "label" and t_label_rule(None, t, k) for _, k, t in units)
+            if want == "MUST-FLAG" and not got: bad.append(f"MUST-FLAG label not flagged: {text!r}")
+            if want == "MUST-PASS" and got: bad.append(f"MUST-PASS label flagged: {text!r}")
     if n == 0: bad.append("VACUOUS: the M11 fixture holds no cases")
     return bad
 
+# The banned-dash control is built from a code point so that no corpus file in the repository
+# has to contain the character itself. It must trip M13.
+DASH_CONTROL = "We believe in real craft " + chr(0x2014) + " the kind you can see.\n"
+
+def _control_lint(name, msgs):
+    """Lint one control corpus file. Returns its findings, or [] after recording a failure
+    in msgs when the file is missing, unreadable or holds no prose."""
+    try:
+        return lint(os.path.join(HERE, "corpus", name))
+    except (OSError, NoProse) as e:
+        msgs.append(f"CONTROL FAIL cannot use corpus/{name}: {e or 'no prose'}")
+        return []
+
 def run_controls():
-    """the report is withheld unless every control passes."""
+    """Run the negative controls. Output: (ok, messages). The report is withheld unless
+    every control passes."""
     ok, msgs = True, []
     f1bad = f1_fixture()
     if f1bad:
@@ -522,54 +624,75 @@ def run_controls():
     if m11bad:
         ok = False
         msgs.append("CONTROL FAIL M11 label fixture, %d wrong: %s" % (len(m11bad), "; ".join(m11bad)))
-    mach = lint(os.path.join(HERE, "corpus", "control-machine.txt"))
-    mach += lint(os.path.join(HERE, "corpus", "control-machine-page.html"))
+    mach = _control_lint("control-machine.txt", msgs) + _control_lint("control-machine-page.html", msgs)
+    mach += lint_text(DASH_CONTROL, ".txt", "message")
     got = {f[1] for f in mach}
     want = {r["id"] for r in RULES["markers"]} | {"F1", "F2", "F3", "F4"}
-    # M12 IS REQUIRED LIKE ANY OTHER MARKER. The line that used to sit here read
-    #     want -= {"M12"} - got
-    # which subtracts M12 from the requirement exactly when M12 did not fire, so M12 could
-    # never fail this control: it was required only when it had already passed. That is the classic
-    # check-that-cannot-fail inside its own control, found 2026-09-14 while mutation testing
-    # the new CV threshold, which the mutation could not turn red because nothing tested it.
+    # Every marker is required, M12 included. Subtracting "M12 unless it fired" from the
+    # requirement would make M12 required only when it had already passed, a check that
+    # cannot fail.
     missing = want - got
     if missing:
         ok = False; msgs.append("CONTROL FAIL machine corpus did not trip: " + ",".join(sorted(missing)))
-    hum = [f for f in lint(os.path.join(HERE, "corpus", "control-human.txt"))
-           if f[1] not in ADVISORY]
+    hum = [f for f in _control_lint("control-human.txt", msgs) if f[1] not in ADVISORY]
     if hum:
         ok = False
         msgs.append("CONTROL FAIL human corpus produced %d false positives: %s"
                     % (len(hum), "; ".join(f"{f[1]} on {f[3][:60]!r}" for f in hum)))
+    if any(m.startswith("CONTROL FAIL cannot use") for m in msgs):
+        ok = False
     return ok, msgs
 
+def build_parser():
+    """Command-line parser. Positional paths (or - for stdin), --kind, --quiet, -h."""
+    ap = argparse.ArgumentParser(
+        prog="copylint",
+        description="Flag machine-register copy in .html, .md and .txt files. "
+                    "It flags and never rewrites. With no path it runs the built-in controls only.",
+        epilog="Exit codes: 0 clean, 1 findings, 2 refused or error (a control failed, a path "
+               "could not be read, or an input held no prose, so no verdict is given).")
+    ap.add_argument("paths", nargs="*", metavar="PATH",
+                    help="files to lint; use - to read stdin (treated as plain text or markdown)")
+    ap.add_argument("--kind", choices=("page", "message"), default="page",
+                    help="page (default) adds page-level checks F1 to F4 and M12; "
+                         "message is for a text, caption or DM")
+    ap.add_argument("--quiet", action="store_true",
+                    help="do not print the 'clean over N markers' line for files with no findings")
+    return ap
+
 def main(argv):
-    quiet = "--quiet" in argv
-    kind_mode = "page"
-    for a in argv:
-        if a.startswith("--kind="): kind_mode = a.split("=", 1)[1]
-    if kind_mode not in ("page", "message"):
-        print(f"VACUOUS: unknown --kind {kind_mode!r}. Use page or message.", file=sys.stderr)
-        return 2
-    argv = [a for a in argv if not a.startswith("--")]
+    """CLI entry point. Input: argument list. Output: exit code (0 clean, 1 findings,
+    2 refused or error)."""
+    args = build_parser().parse_args(argv)
     ok, msgs = run_controls()
     if not ok:
         print("VACUOUS: controls did not pass, no verdict is reported.", file=sys.stderr)
         for m in msgs: print("  " + m, file=sys.stderr)
         return 2
-    if not argv:
+    if not args.paths:
         print("controls pass (machine corpus trips every named marker, human corpus trips none)")
         return 0
-    total = 0
-    for p in argv:
-        fs = lint(p, kind_mode)
+    total, refused = 0, False
+    for p in args.paths:
+        try:
+            fs = lint(p, args.kind)
+        except OSError as e:
+            print(f"ERROR: cannot read {p}: {e.strerror or e}", file=sys.stderr)
+            refused = True; continue
+        except NoProse as e:
+            why = f" ({e})" if str(e) else ""
+            print(f"VACUOUS: no prose extracted from {p}{why}, no verdict", file=sys.stderr)
+            refused = True; continue
+        except RulesError as e:
+            print(f"VACUOUS: {e}. No verdict is reported.", file=sys.stderr)
+            return 2
         total += len(fs)
         for line, rid, name, sent in fs:
             tag = " (advisory)" if rid in ADVISORY else ""
             print(f"{p}:{line}: [{rid}]{tag} {name} | {sent[:160]}")
-        if not fs and not quiet:
-            n = len(RULES['markers']) - (len(PAGE_ONLY) if kind_mode != "page" else 0)
-            print(f"{p}: clean over {n} markers ({kind_mode} mode)")
+        if not fs and not args.quiet:
+            print(f"{p}: clean over {len(evaluated_marker_ids(args.kind))} markers ({args.kind} mode)")
+    if refused: return 2
     return 1 if total else 0
 
 if __name__ == "__main__":

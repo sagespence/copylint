@@ -1,13 +1,12 @@
 # F1 boundary fixture. GATES THE REPORT: copylint refuses to print a verdict if any line here
-# scores wrong. Built 2026-09-14 when F1 was moved from a vocabulary list to the reviewer's four
-# structural archetypes () plus E, a posted schedule, which is ours.
+# scores wrong. F1 tests for a structural operational boundary (archetypes A to D) or a posted
+# schedule (E), not for vocabulary.
 #
 # Column 1: MUST-FAIL means the text carries NO operational boundary and F1 must fire on it.
 #           MUST-PASS means it carries one and F1 must stay silent.
 # Column 2: the text.
 #
-# The first two MUST-PASS lines are FALSE POSITIVES THIS BUILD PRODUCED AND FIXED, pinned here
-# in the same turn as the fix per the standing rule in this stream.
+# Several MUST-PASS lines below are former false positives, pinned here so they stay fixed.
 MUST-FAIL	Enjoy zero deposits, flexible hours, and unlimited payments!
 MUST-FAIL	Haircuts are $45. Beard trims are $25. We love what we do.
 MUST-FAIL	Our technicians are here for you. Book anytime. We make it easy.
@@ -22,10 +21,10 @@ MUST-PASS	We do not work on European diesel engines.
 MUST-PASS	You must wash your hair the night before your color appointment.
 MUST-PASS	Open Tuesday through Saturday, 9am to 5pm.
 MUST-PASS	Cash, Zelle, or debit. We don't take Amex.
-# Added 2026-09-14 from moxies.com, a real professional chain page, read from his screenshots.
-# The offer line was the third F1 false positive of the day, same direction as the first two.
+# The next three lines come from a national chain's seasonal offer page: a date window, a
+# spend floor and an eligibility gate, each a real limit that an earlier version missed.
 MUST-PASS	Available September 8-November 15. Minimum spend and eligibility requirements apply.
 MUST-PASS	Minimum spend of $500 for groups of eight or more.
 MUST-PASS	Offer valid October 1 through December 24. Restrictions apply.
-MUST-FAIL	Meet Me at Moxies. Globally-inspired menus. Welcoming atmosphere. Award-winning hospitality.
-MUST-FAIL	Uniquely Moxies. Handcrafted Cocktails. Signature Desserts. Stay in the Know.
+MUST-FAIL	Meet Me at Harbor Grill. Globally-inspired menus. Welcoming atmosphere. Award-winning hospitality.
+MUST-FAIL	Uniquely Harbor Grill. Handcrafted Cocktails. Signature Desserts. Stay in the Know.

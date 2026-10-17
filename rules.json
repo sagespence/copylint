@@ -1,12 +1,12 @@
 {
- "version": "2026-09-14",
- "source": "the house copy standard is the prose; this file is what the linter reads. Edit both in one operation.",
+ "version": "1.0",
+ "source": "Marker definitions and thresholds read by copylint.py. The README summarizes each marker; edit this file and the README together.",
  "markers": [
   {
    "id": "M1",
    "name": "trailing benefit clause",
    "rank": 1,
-   "origin": "external review 2026-09-13 rank1",
+   "origin": "Common in model-written service copy.",
    "test": "regex",
    "pattern": ",\\s+(ensuring|allowing|giving|delivering|creating|providing|fostering|leaving|helping|letting|making sure|so that you|so you can)\\b",
    "why": "A complete clause ends, then a comma, then a verb-ing tail asserting a benefit. Owners state the fact and stop."
@@ -15,7 +15,7 @@
    "id": "M2",
    "name": "fronted participial",
    "rank": 2,
-   "origin": "external review 2026-09-13 rank2",
+   "origin": "Common in model-written service copy.",
    "test": "fronted",
    "pattern": "^(?:[A-Z][a-z]+(?:ing|ed)|By\\s+[a-z]+ing|Through\\s+[a-z]+ing|Drawing\\s+on|Combining|Blending|Bringing|Delivering|Crafting|Navigating)\\b[^.?!]*,\\s+(we|our|you|your|the|it)\\b",
    "why": "Sentence opens with a verb-ing phrase before the actor. Actors come first in shop speech."
@@ -24,7 +24,7 @@
    "id": "M3",
    "name": "copular abstraction",
    "rank": 3,
-   "origin": "external review 2026-09-13 rank3",
+   "origin": "Common in model-written service copy.",
    "test": "regex",
    "pattern": "\\b(is|are|was|were)\\s+(all about|designed to|here to|dedicated to|committed to|built to|meant to|about)\\b",
    "why": "Describes what a service IS rather than what hands do."
@@ -33,7 +33,7 @@
    "id": "M4",
    "name": "antithetical polarity",
    "rank": 4,
-   "origin": "external review 2026-09-13 rank4 + house style",
+   "origin": "Common in model-written service copy.",
    "test": "regex",
    "pattern": "\\bnot\\s+(just|only|merely|simply)\\b[^.?!]*\\bbut\\b|\\bmore than just\\b|\\bgo(es)? beyond\\b[^.?!]*\\bby\\b",
    "why": "not just X but Y. Contrast used for weight where a number or a tool would do."
@@ -42,7 +42,7 @@
    "id": "M5",
    "name": "colon then explanation",
    "rank": 2,
-   "origin": "house 2026-09-13 marker 1, refined after external review",
+   "origin": "Common in model-written service copy; refined against false positives on label:value pairs.",
    "test": "colon_claim",
    "why": "A claim pre-announced then unpacked. The defect is the pre-announcement, not the colon: a label-to-value colon (Hours: 9 to 5) is fine."
   },
@@ -50,7 +50,7 @@
    "id": "M6",
    "name": "symmetrical tricolon",
    "rank": 2,
-   "origin": "house 2026-09-13 marker 2",
+   "origin": "Common in model-written service copy.",
    "test": "isocolon",
    "n": 3,
    "why": "Three equal-weight, equal-length parallel clauses built to be read as a set."
@@ -59,7 +59,7 @@
    "id": "M7",
    "name": "symmetrical bicolon",
    "rank": 5,
-   "origin": "external review 2026-09-13 rank5",
+   "origin": "Common in model-written service copy.",
    "test": "isocolon",
    "n": 2,
    "why": "Two matched clauses joined by and, same grammar, syllable counts within 2."
@@ -68,7 +68,7 @@
    "id": "M8",
    "name": "rhetorical question header",
    "rank": 6,
-   "origin": "external review 2026-09-13 rank6",
+   "origin": "Common in model-written service copy.",
    "test": "regex",
    "pattern": "^(Why\\s+(choose|us|we)|Looking for|Ready to|Need (a|an|your)|Tired of|Want to)\\b[^.!]*\\?",
    "why": "Question header simulating customer empathy, answered immediately below."
@@ -77,7 +77,7 @@
    "id": "M9",
    "name": "agency gloss",
    "rank": 4,
-   "origin": "house 2026-09-13 marker 4",
+   "origin": "Common in model-written service copy.",
    "test": "regex",
    "pattern": "\\b(with|using)\\s+(patience|precision|care|craftsmanship|artistry|mastery|passion|dedication|attention to detail)\\b|\\b(meticulous|bespoke|seamless|artisanal|premier|uncompromising|unparalleled|curated|elevated|refined|timeless|effortless|premium|tailored|handcrafted|artisan|exceptional|unmatched|unwavering|thoughtful|authentic dedication|enduring legacy|vibrant|discerning|comprehensive)\\b",
    "why": "Abstract-virtue adjectives stacked on a concrete physical task."
@@ -86,7 +86,7 @@
    "id": "M10",
    "name": "tagline headline",
    "rank": 3,
-   "origin": "house 2026-09-13 marker 3",
+   "origin": "Common in model-written service copy.",
    "test": "tagline",
    "why": "Short abstract headline working as free-standing ad copy, naming no business, place, price, time or service."
   },
@@ -94,7 +94,7 @@
    "id": "M11",
    "name": "label with bolted-on claim",
    "rank": 1,
-   "origin": "his words 2026-09-07",
+   "origin": "Style guidance: a name is the bare noun.",
    "test": "label_rule",
    "why": "A service or section name is the bare noun. No verb phrase, participle, preposition tag or explanation bolted on."
   },
@@ -102,10 +102,10 @@
    "id": "M12",
    "name": "flat sentence-length entropy",
    "rank": 7,
-   "origin": "external review 2026-09-13 rank7; thresholds revised 2026-09-14 ",
+   "origin": "Common in model-written service copy; thresholds tuned on the corpora in this repository.",
    "test": "entropy",
    "window": 4,
-   "why": "Four or more consecutive prose sentences whose word-count coefficient of variation is under 0.18 where the mean is 14 words or more. CV rather than raw stdev because stdev scales with sentence length: 3.0 on 12-word sentences is 25% variation and on 24-word sentences only 12.5%. Window widened from 3 because three declarative human sentences hit a low stdev by coincidence (13, 14, 13 gives 0.58). Human copy is bursty.",
+   "why": "Four or more consecutive prose sentences whose word-count coefficient of variation is under 0.18 where the mean is 14 words or more. CV rather than raw stdev because stdev scales with sentence length: 3.0 on 12-word sentences is 25% variation and on 24-word sentences only 12.5%. Window widened from 3 because three declarative human sentences hit a low stdev by coincidence (13, 14, 13 gives 0.58). Human copy is bursty. Advisory only: see corpus/KNOWN-MISSES.md for why the threshold is unsized.",
    "mean_floor": 14,
    "cv_ceiling": 0.18
   },
@@ -113,25 +113,25 @@
    "id": "M13",
    "name": "banned dash",
    "rank": 1,
-   "origin": "house style",
+   "origin": "Style guidance on dashes.",
    "test": "regex",
    "pattern": "[\\u2014\\u2013]",
-   "why": "Em dash and en dash are banned. The hyphen is permitted (his 2026-08-14 relaxation)."
+   "why": "Em dash and en dash are banned. The hyphen is permitted."
   },
   {
    "id": "M14",
    "name": "banned phrase",
    "rank": 1,
-   "origin": "the house wording guide",
+   "origin": "Stock phrases and boilerplate closes common in model-written and template copy.",
    "test": "regex",
    "pattern": "\\b(quick one|quick question|just a quick|dive in|in today's fast-paced world|it's worth noting|elevate your|unlock (your|the)|leverage(s|d)? (our|your|the)|tapestry|navigating the landscape|game-changer|take it to the next level|peace of mind|one-stop shop|cutting-edge|state-of-the-art|on autopilot|in your words|share (that|your) experience|we would love for you to|thank you for choosing|we value your)\\b",
-   "why": "Named phrase bans. the families in the house wording guide. Includes the customer-service boilerplate close, named by the reviewer on the labelled variant set. 'quick one' and its family added 2026-09-15 on his correction: \"stop saying quick one, i never talk like that\". It is filler he does not use, and it was written into a text drafted FOR him."
+   "why": "Named phrase bans: stock openers, filler, buzzwords and customer-service boilerplate closes that signal machine or template copy. Includes 'quick one' and its family, which is filler a small-business owner would not say out loud."
   },
   {
    "id": "M15",
    "name": "determiner tricolon",
    "rank": 2,
-   "origin": "measured 2026-09-14 on the labelled post-cut variants; the clause tricolon M6 cannot see a noun triple",
+   "origin": "Measured on labelled sample variants; the clause tricolon M6 cannot see a noun triple.",
    "test": "det_tricolon",
    "why": "Three parallel noun phrases sharing one determiner: 'your time, your trust, and your style'. The machine isocolon in its commonest form."
   },
@@ -139,7 +139,7 @@
    "id": "M16",
    "name": "imperative possessive series",
    "rank": 2,
-   "origin": "measured 2026-09-14 on the reviewer's 50-sentence scored set; M6 missed it because the clause lengths diverge",
+   "origin": "Measured on a labelled scored set; M6 missed it because the clause lengths diverge.",
    "test": "imp_series",
    "why": "A repeated imperative-plus-possessive frame: 'Refine your wardrobe, express your individuality, and command respect'. The tell is the frame, not matched length."
   },
@@ -147,7 +147,7 @@
    "id": "M17",
    "name": "noun-phrase tricolon",
    "rank": 2,
-   "origin": "moxies.com read from his screenshots 2026-09-14; measured miss",
+   "origin": "Measured on a restaurant page whose strapline tripped no other marker.",
    "test": "np_tricolon",
    "why": "Three consecutive verbless noun-phrase fragments, 2 to 4 words each, at least two carrying an adjective. The machine strapline in its commonest form. M6 sees clause tricolons and M15 needs a shared determiner, so neither can see 'Globally-inspired menus. Welcoming atmosphere. Award-winning hospitality.' A genuine fragment menu carries no adjectives and does not flag."
   }
@@ -156,54 +156,37 @@
   {
    "id": "F1",
    "name": "no operational boundary",
-   "origin": "external review 2026-09-13 blind spot 1; made structural, external review 2026-09-14 ",
-   "why": "Copy with zero limits, hours, exclusions, deposits, cancellation terms or payment rules reads as an AI simulation of a business with infinite capacity. TESTED STRUCTURALLY, NOT BY VOCABULARY: a keyword list is spoofed by naming a price, which is how the reviewer's own bypass passed it. A page passes on one of four boundary archetypes or on a concrete posted schedule.",
+   "origin": "Common blind spot of marker-only linters; made structural after vocabulary-list versions were easy to spoof.",
+   "why": "Copy with zero limits, hours, exclusions, deposits, cancellation terms or payment rules reads as an AI simulation of a business with infinite capacity. TESTED STRUCTURALLY, NOT BY VOCABULARY: a keyword list is spoofed by naming a price. A page passes on one of five boundary archetypes (A condition with a penalty, B capacity ceiling, C scope exclusion, D prerequisite gate, E posted schedule). The F1 fixture in corpus/ pins the true and false cases, including a spoof sentence that must not pass.",
    "test": "boundary_archetypes",
    "archetypes": {
     "A_bilateral_condition_penalty": "\\b(if|unless|in the event)\\b[^.!?]{0,90}?\\b(charge[ds]?|charging|bill(ed|ing)?|forfeit(ed|s)?|lose|lost|cancel(led|s|lation)?|reschedul\\w*|surcharge|fee|no[- ]show|void(ed|s)?|goes back|do(es)? not hold)\\b|\\b(requirements?|restrictions?|conditions?|exclusions?)\\s+(apply|may apply)\\b|\\bsubject to\\b[^.!?]{0,40}\\b(availability|approval|change|terms)\\b",
-    "B_hard_capacity_ceiling": "\\b(only|strictly|exclusively|no more than|maximum of|max(imum)? \\d|up to \\d|limit(ed)? to)\\b[^.!?]{0,60}?(\\b\\d|\\b(mon|tues|wednes|thurs|fri|satur|sun)day\\b|\\bappointment|\\bbooking|\\bper (day|week|weekend|month))|\\bby appointment\\b|\\bappointment only\\b|\\bno walk-?ins?\\b|\\bwalk-?ins?\\b[^.!?]{0,40}\\b(only|on (mon|tues|wednes|thurs|fri|satur|sun)day)\\b|\\bminimum\\s+(spend|order|purchase|party|group|booking|of)\\b|\\b(available|valid|offer(ed)?|runs?)\\b[^.!?]{0,40}?\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s*\\d{1,2}\\b[^.!?]{0,20}?[-‐-―to through until]{1,10}\\s*(\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s*)?\\d{1,2}\\b",
+    "B_hard_capacity_ceiling": "\\b(only|strictly|exclusively|no more than|maximum of|max(imum)? \\d|up to \\d|limit(ed)? to)\\b[^.!?]{0,60}?(\\b\\d|\\b(mon|tues|wednes|thurs|fri|satur|sun)day\\b|\\bappointment|\\bbooking|\\bper (day|week|weekend|month))|\\bby appointment\\b|\\bappointment only\\b|\\bno walk-?ins?\\b|\\bwalk-?ins?\\b[^.!?]{0,40}\\b(only|on (mon|tues|wednes|thurs|fri|satur|sun)day)\\b|\\bminimum\\s+(spend|order|purchase|party|group|booking|of)\\b|\\b(available|valid|offer(ed)?|runs?)\\b[^.!?]{0,40}?\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s*\\d{1,2}\\b[^.!?]{0,20}?[-\\u2010-\\u2015to through until]{1,10}\\s*(\\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\\.?\\s*)?\\d{1,2}\\b",
     "C_explicit_scope_exclusion": "\\b(we|shop|they|i)\\s+(do not|don't|cannot|can't|will not|won't|never)\\s+\\w+",
-    "D_prerequisite_gate": "\\b(must|must have|need to|needs to|have to|has to|required to|required|requires?)\\b[^.!?]{0,90}?(\\b(before|prior to|ahead of|in advance|at drop[- ]?off|when you (drop|bring|come))\\b|\\b\\d[\\d,.]*\\s*[-‐-―]?\\s*(hour|hr|day|week|minute|min|month|dollar|percent|%)\\w*\\b|\\$\\s?\\d|\\b(deposit|retainer|permit|proof of|insurance|photo id|valid id|appointment)\\b)|\\b(bring|provide|supply)\\b[^.!?]{0,60}?\\b(before|prior to|when you (drop|bring|come))\\b|\\b(deposit|retainer|fee|permit|proof of \\w+|insurance|photo id|valid id)\\b[^.!?]{0,60}?\\b(is|are)\\s+(required|due|non-?refundable|payable)\\b",
+    "D_prerequisite_gate": "\\b(must|must have|need to|needs to|have to|has to|required to|required|requires?)\\b[^.!?]{0,90}?(\\b(before|prior to|ahead of|in advance|at drop[- ]?off|when you (drop|bring|come))\\b|\\b\\d[\\d,.]*\\s*[-\\u2010-\\u2015]?\\s*(hour|hr|day|week|minute|min|month|dollar|percent|%)\\w*\\b|\\$\\s?\\d|\\b(deposit|retainer|permit|proof of|insurance|photo id|valid id|appointment)\\b)|\\b(bring|provide|supply)\\b[^.!?]{0,60}?\\b(before|prior to|when you (drop|bring|come))\\b|\\b(deposit|retainer|fee|permit|proof of \\w+|insurance|photo id|valid id)\\b[^.!?]{0,60}?\\b(is|are)\\s+(required|due|non-?refundable|payable)\\b",
     "E_posted_schedule": "\\b(mon|tues|wednes|thurs|fri|satur|sun)day(s)?\\b[^.!?]{0,60}?(\\b\\d{1,2}\\s*(:\\d{2})?\\s*(am|pm|a\\.m\\.|p\\.m\\.|o'clock)|\\bnoon\\b|\\bclosed\\b|\\bopen(s|ing)?\\b|\\bstart(s|ing)?\\b)|\\b(open|closed)\\b[^.!?]{0,40}?\\b\\d{1,2}\\s*(:\\d{2})?\\s*(am|pm|a\\.m\\.|p\\.m\\.)"
-   },
-   "spoof_control": "Enjoy zero deposits, flexible hours, and unlimited payments!",
-   "spoof_note": "Must NOT satisfy F1. The old vocabulary list passed it on 'deposits', 'hours' and 'payments'. This string is asserted in the selftest.",
-   "archetype_notes": {
-    "D_widened_2026-09-14": "D first required a temporal preposition and therefore called the reviewer's own sentence 5, 'Appointments require a 48-hour deposit of fifty dollars', no boundary. That is a real deposit with a real window and the miss was a FALSE POSITIVE on F1, which is the expensive direction: an F1 that fires on pages that do state limits trains people to ignore it. D now also accepts a requirement verb governing a quantified prerequisite. The spoof stays out because it carries no requirement verb.",
-    "D_passive_order_2026-09-14": "D read the requirement verb before the prerequisite only, so the passive order, 'A fifty dollar deposit is required to hold the slot', was called no boundary. Second false positive on F1 in the same build, same direction, pinned in the fixture.",
-    "A_B_widened_2026-09-14_moxies": "Third F1 false positive of the day and the same expensive direction. Measured on a real professional restaurant page he called cohesive: 'Available September 8-November 15. Minimum spend and eligibility requirements apply.' carries a date window, a spend floor and an eligibility gate, three real limits, and scored no archetype, so the page was reported as having no operational boundary at all. A carries requirements/restrictions apply and subject-to; B carries a minimum spend and a month-to-month availability window. The spoof stays out: it names no requirement, no minimum and no dates."
    }
   },
   {
    "id": "F2",
    "name": "draft residue in copy",
-   "origin": "reviewer a sample site site review 2026-09-13",
-   "why": "Builder scaffolding, prompt residue or placeholder text surviving into visible copy. Measured: a credential card shipped reading 'Her own words on her About page, and the events behind them.'",
+   "origin": "Seen in generated pages.",
+   "why": "Builder scaffolding, prompt residue or placeholder text surviving into visible copy, for example a credential card reading 'Her own words on her About page, and the events behind them.'",
    "test": "page_structure"
   },
   {
    "id": "F3",
    "name": "asset reused across the page",
-   "origin": "reviewer a sample site site review 2026-09-13",
+   "origin": "Seen in generated pages.",
    "why": "One image wired into three or more places on a single page. Reads as a thin library rather than a real shoot.",
    "test": "page_structure"
   },
   {
    "id": "F4",
    "name": "monotonous grid rhythm",
-   "origin": "reviewer a sample site site review 2026-09-13",
+   "origin": "Seen in generated pages.",
    "why": "The same two-column split declared four or more times, an alternating 50/50 flip down the whole page. The commonest generated-site cadence.",
    "test": "page_structure"
   }
- ],
- "carve_outs": {
-  "note": "Never flagged. Overcorrection produces copy that reads robotic in reverse.",
-  "items": [
-   "oxford comma",
-   "sentence-initial And/But/So",
-   "passive voice in operational constraints",
-   "contractions",
-   "discourse markers that introduce a real constraint"
-  ]
- }
+ ]
 }
